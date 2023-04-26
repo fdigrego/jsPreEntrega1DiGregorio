@@ -1,5 +1,6 @@
 let tarea ='buscar';
 let enMenu = true;
+let pepe;
 class unProducto {
     constructor(nombre, precio, stock){
         this.nombre = nombre.toLowerCase();
@@ -16,6 +17,22 @@ class unProducto {
     }
 }
 const losProductos = [];
+function replacer(key, value) {
+    if (typeof value === 'function') {
+        return value.toString();
+    }
+    return value;
+}
+function reviver(key, value) {
+    if (typeof value === 'string') {
+        const regex = /^function\s*([\w$]+)?\s*\(([\w\s,]*)\)\s*\{([\w\W]*?)\}$/;
+        const parts = regex.exec(value);
+        if (parts) {
+            return new Function(parts[2], parts[3]);
+        }
+    }
+    return value;
+}
 
 if (localStorage.getItem('myObj') === null) {
     //Productos agregados con push y unshift
@@ -24,34 +41,14 @@ if (localStorage.getItem('myObj') === null) {
     let prod3 = new unProducto('ZANAHORIA', 30, 62);
     let prod4 = new unProducto('limón', 25, 88);
     let prod5 = new unProducto('vinagre', 432, 50);
+    console.log('detecto que no hay data en local storage');
     losProductos.push(prod1, prod3, prod5, prod4);
     losProductos.unshift(prod2);    
-    } else if (localStorage.getItem('myObj') !== null) {
-        function replacer(key, value) {
-            if (typeof value === 'function') {
-            return value.toString();
-            }
-            return value;
-        }
-            const serializedObj = JSON.stringify(losProductos, replacer);
-            // Save serialized object to localStorage
-            localStorage.setItem('myObj', serializedObj);
-            // Retrieve serialized object from localStorage
-            const serializedObjFromLocalStorage = localStorage.getItem('myObj');
-            // Convert strings back to methods
-            function reviver(key, value) {
-                if (typeof value === 'string') {
-                const regex = /^function\s*([\w$]+)?\s*\(([\w\s,]*)\)\s*\{([\w\W]*?)\}$/;
-                const parts = regex.exec(value);
-                if (parts) {
-                    return new Function(parts[2], parts[3]);
-                }
-            }
-            return value;
-        }
-            const objFromLocalStorage = JSON.parse(serializedObjFromLocalStorage, reviver);
+} else {
+    const serializedObjFromLocalStorage = localStorage.getItem('myObj');
+    const objFromLocalStorage = JSON.parse(serializedObjFromLocalStorage, reviver);
+    losProductos.push(new unProducto(objFromLocalStorage));
 }
-
 function ubicarProducto(tarea){
     let buscar = prompt(`Buscar producto acción: ${tarea}`).toLowerCase();
     elemento = losProductos.findIndex((campo)=> campo.nombre === buscar);
@@ -76,11 +73,7 @@ function agregarProducto(){
 function guardarProductos() {
     const serializedObj = JSON.stringify(losProductos, replacer);
     localStorage.setItem('myObj', serializedObj);
-    const serializedObjFromLocalStorage = localStorage.getItem('myObj');
-    const objFromLocalStorage = JSON.parse(serializedObjFromLocalStorage, reviver);
 }
-
-
 function contarMovimientos(){
     cantVentas = losProductos.reduce((acum, valActual) =>  acum + valActual.ventas, 0);
     return console.log(`Total movimientos: ${cantVentas}`);
@@ -104,7 +97,7 @@ function verProductosVendidos(){
     console.log(`Total ventas: ${totalVentas}`);
 }
 do {
-    enMenu = prompt('Opcion en Productos:\nl -> Listar\na -> Agregar\ne -> Elimininar\nv -> Vender\nm -> Movimientos\nv -> Vender\ns -> Stock\nn -> Ventas\nesc -> Salir').toLowerCase();
+    enMenu = prompt('Opcion en Productos:\nl -> Listar\na -> Agregar\ne -> Elimininar\nv -> Vender\nm -> Movimientos\nv -> Vender\ns -> Stock\nn -> Ventas\ng -> Guardar Productos\nesc -> Salir').toLowerCase();
     switch (enMenu) {
         case 'l':
             console.table(losProductos);
@@ -129,6 +122,9 @@ do {
             break;
         case 'n':
             verProductosVendidos();
+            break;
+        case 'g':
+            guardarProductos();
             break;
         default:
             break;
